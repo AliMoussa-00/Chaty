@@ -16,4 +16,11 @@
     <string name="description">Tell us about yourself</string>
     <string name="select_image">please pick an image</string>
     <string name="continue_phone">Continue with phone number</string>
+    <string name="enter_code">please enter the code we sent to you</string>
+    <string name="send_message">send the message</string>
+    <string name="message">Message</string>
+    <string name="add_options">add other options</string>
+    <string name="show_pass">show password</string>
+    <string name="hide_pass">hide password</string>
+    <string name="weak_pass">password should be at least 6 characters</string>
 </resources>

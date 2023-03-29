@@ -65,12 +65,12 @@ fun ListItemImage(
     isConnected: Boolean,
 ) {
 
-    Box(Modifier.size(44.dp)) {
+    Box(Modifier.size(48.dp)) {
         AsyncImage(
             model = R.drawable.facebook,
             contentDescription = userName,
             modifier = modifier
-                .size(44.dp)
+                .size(48.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
@@ -104,6 +104,8 @@ fun ListItemContents(modifier: Modifier, user: User) {
         Text(text = "Last Message",  fontSize = 12.sp)
     }
 }
+
+
 
 val localList = listOf(
     User(

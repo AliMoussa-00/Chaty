@@ -1,6 +1,9 @@
 package com.example.chitchat.ui.screens.signup
 
+import android.content.Context
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,33 +23,72 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.chitchat.R
+import com.example.chitchat.model.CurrentUser
+import com.example.chitchat.model.ScreenType
+import com.example.chitchat.model.UiState
+import com.example.chitchat.ui.screens.ChatViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 
 
 @Composable
-fun SignScreen_2() {
+fun SignScreen_2(
+    firebaseAuth: FirebaseAuth,
+    chatViewModel: ChatViewModel,
+    uiState: UiState,
+) {
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf<String?>(null) }
+    var profileImage by remember {
+        mutableStateOf<Uri>(
+            Uri.parse(
+                "android.resource://com.example.chitchat/${R.drawable.baseline_account_circle_24}"
+            )
+        )
+    }
 
-    var phone by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
-    var description by remember { mutableStateOf("") }
 
     SingContents2(
         firstNameValue = firstName,
         firstNameValueChanged = { firstName = it },
         lastNameValue = lastName,
         lastNameValueChanged = { lastName = it },
-        description = description,
+        description = description ?: "",
         descriptionValueChanged = { description = it },
-        phoneValue = phone,
-        phoneValueChanged = { phone = it },
+        setPickedImage = { profileImage = it },
+        onClickSignIn = {
+
+            val currentUser = CurrentUser(
+                firstName = firstName,
+                lastName = lastName,
+                description = description,
+                image = profileImage.toString()
+            )
+
+            chatViewModel.setCurrentUser(currentUser)
+
+            Log.e("TAG", "currentUser = $currentUser")
+
+            updateUserProfile(
+                firebaseAuth = firebaseAuth,
+                currentUser = currentUser,
+                chatViewModel = chatViewModel,
+                context = context,
+            )
+        }
     )
 
 }
@@ -60,8 +102,8 @@ fun SingContents2(
     lastNameValueChanged: (String) -> Unit,
     description: String,
     descriptionValueChanged: (String) -> Unit,
-    phoneValue: String,
-    phoneValueChanged: (String) -> Unit,
+    onClickSignIn: () -> Unit,
+    setPickedImage: (Uri) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -71,7 +113,7 @@ fun SingContents2(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        PickUserImage()
+        PickUserImage { setPickedImage(it) }
 
         Row(
             Modifier.fillMaxWidth(),
@@ -94,31 +136,41 @@ fun SingContents2(
             descriptionValueChanged = descriptionValueChanged
         )
 
-        SignInButton {}
+        SignInButton(
+            isEnabled = firstNameValue.isNotEmpty() && lastNameValue.isNotEmpty(),
+            onClickSignIn = onClickSignIn
+        )
     }
 }
 
 @Composable
 fun PickUserImage(
     modifier: Modifier = Modifier,
+    setPickedImage: (Uri) -> Unit,
 ) {
 
-    var selectedImage by remember { mutableStateOf<Uri?>(null) }
+    val defaultImage =
+        "android.resource://com.example.chitchat/${R.drawable.baseline_account_circle_24}"
+
+    var selectedImage by remember { mutableStateOf<Uri>(Uri.parse(defaultImage)) }
+
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = {
-            selectedImage = it
+            selectedImage = it ?: Uri.parse(defaultImage)
+
+            setPickedImage(selectedImage)
         }
     )
 
 
-    Box(Modifier.size(136.dp)) {
+    Box(modifier.size(128.dp)) {
 
         AsyncImage(
             modifier = Modifier
                 .size(128.dp)
                 .clip(CircleShape),
-            model = selectedImage ?: R.drawable.facebook,
+            model = selectedImage,
             contentDescription = null,
             contentScale = ContentScale.Crop
         )
@@ -222,3 +274,60 @@ fun DescriptionField(
     )
 }
 
+private fun updateUserProfile(
+    firebaseAuth: FirebaseAuth,
+    currentUser: CurrentUser,
+    chatViewModel: ChatViewModel,
+    context: Context,
+) {
+    val uid = firebaseAuth.currentUser?.uid
+
+    val database = Firebase.database.reference
+
+    database.child("Users").child(uid!!).setValue(currentUser)
+        .addOnCompleteListener {
+            if (it.isSuccessful) {
+
+                uploadImage(firebaseAuth, Uri.parse(currentUser.image), chatViewModel, context)
+
+            } else {
+                Log.e("TAG", "UPDATE PROFILE : ${it.exception}")
+                Toast.makeText(context, "Something is wrong !", Toast.LENGTH_LONG).show()
+            }
+        }
+
+}
+
+private fun uploadImage(
+    firebaseAuth: FirebaseAuth,
+    imageUri: Uri,
+    chatViewModel: ChatViewModel,
+    context: Context,
+) {
+    val uid = firebaseAuth.currentUser!!.uid
+
+    val storageReference =
+        Firebase.storage.reference.child("images").child(uid)
+
+    storageReference.putFile(imageUri).addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+
+            storageReference.downloadUrl.addOnCompleteListener {
+                if (it.isSuccessful) {
+                    // storing the new reference to the image in firebase storage:
+                    Firebase.database.reference.child("Users").child(uid).child("image")
+                        .setValue(it.result.toString())
+
+                } else {
+                    Log.e("TAG", "Failed to download image url")
+                }
+            }
+
+            chatViewModel.setScreenType(ScreenType.HomeList)
+        } else {
+            Log.e("TAG", "UPLOAD IMAGE failed : ${task.exception}")
+            Toast.makeText(context, "Something is wrong !", Toast.LENGTH_LONG).show()
+        }
+    }
+
+}

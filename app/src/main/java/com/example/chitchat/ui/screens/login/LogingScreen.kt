@@ -1,5 +1,8 @@
 package com.example.chitchat.ui.screens.login
 
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,11 +13,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -22,14 +28,20 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.chitchat.R
+import com.example.chitchat.model.ScreenType
+import com.example.chitchat.ui.screens.ChatViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
+    chatViewModel: ChatViewModel,
+    firebaseAuth: FirebaseAuth,
 ) {
 
     var userNameValue by remember { mutableStateOf("") }
     var passwordValue by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Column(
         modifier = modifier
@@ -46,8 +58,18 @@ fun LoginScreen(
             userNameValueChanged = { userNameValue = it },
             passWordValue = passwordValue,
             passwordValueChanged = { passwordValue = it },
-            onClickForget = { /*TODO*/ },
-            onClickLogin = {}
+            onClickSignIn = { chatViewModel.setScreenType(ScreenType.SingChoose) },
+            onClickForget = {
+                if(userNameValue.isNotEmpty()){
+                    resetPassword(firebaseAuth = firebaseAuth, email = userNameValue, context = context)
+                }
+                else{
+                    Toast.makeText(context,"please enter your email!",Toast.LENGTH_LONG).show()
+                }
+            },
+            onClickLogin = {
+                loginUser(firebaseAuth, userNameValue, passwordValue, chatViewModel, context)
+            },
         )
 
     }
@@ -62,6 +84,7 @@ fun LoginFields(
     passwordValueChanged: (String) -> Unit,
     onClickForget: () -> Unit,
     onClickLogin: () -> Unit,
+    onClickSignIn: () -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -75,7 +98,7 @@ fun LoginFields(
         PassWordField(passWordValue = passWordValue, passwordValueChanged = passwordValueChanged)
         ForgetPassWord(onClickForget = onClickForget)
         LoginButton(onClickLogin = onClickLogin)
-        SignUp(onClickSignUp = {})
+        SignUp(onClickSignUp = onClickSignIn)
         Spacer(modifier = Modifier.weight(1f))
         LoginDivider()
         ContinueLogin()
@@ -115,7 +138,7 @@ fun PassWordField(
     passWordValue: String,
     passwordValueChanged: (String) -> Unit,
 ) {
-    val showPassword by remember { mutableStateOf(false) }
+    var showPassword by remember { mutableStateOf(false) }
 
     OutlinedTextField(
         modifier = modifier.fillMaxWidth(),
@@ -127,11 +150,16 @@ fun PassWordField(
         keyboardActions = KeyboardActions(onDone = null),
         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
-            IconButton(onClick = { passwordValueChanged("") }) {
-                if (passWordValue.isNotEmpty()) {
+            IconButton(onClick = { showPassword = !showPassword }) {
+                if (!showPassword) {
                     Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = stringResource(id = R.string.clear_field)
+                        imageVector = Icons.Filled.Visibility,
+                        contentDescription = stringResource(id = R.string.show_pass)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.VisibilityOff,
+                        contentDescription = stringResource(id = R.string.hide_pass)
                     )
                 }
             }
@@ -226,4 +254,53 @@ fun SignUp(
             Text(text = stringResource(id = R.string.signup))
         }
     }
+}
+
+private fun loginUser(
+    firebaseAuth: FirebaseAuth,
+    email: String,
+    password: String,
+    chatViewModel: ChatViewModel,
+    context: Context,
+) {
+
+    firebaseAuth.signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener {
+            if (it.isSuccessful) {
+                Log.e("TAG", "LOGIN successful")
+                verifyEmailAddress(
+                    firebaseAuth = firebaseAuth,
+                    chatViewModel = chatViewModel,
+                    context = context
+                )
+            } else {
+                Log.e("TAG", "LOGIN failed :${it.exception}")
+                Toast.makeText(context, "Login failed ! ", Toast.LENGTH_LONG).show()
+            }
+        }
+}
+
+private fun verifyEmailAddress(
+    firebaseAuth: FirebaseAuth,
+    chatViewModel: ChatViewModel,
+    context: Context,
+) {
+    val user = firebaseAuth.currentUser
+    if (user!!.isEmailVerified) {
+        chatViewModel.setScreenType(ScreenType.HomeList)
+    } else {
+        Toast.makeText(context, "Please verify your email", Toast.LENGTH_LONG).show()
+    }
+}
+
+private fun resetPassword(firebaseAuth: FirebaseAuth,email:String,context: Context){
+    firebaseAuth.sendPasswordResetEmail(email)
+        .addOnCompleteListener{
+            if(it.isSuccessful){
+                Toast.makeText(context,"Please check your email box",Toast.LENGTH_LONG).show()
+            }
+            else{
+                Toast.makeText(context,"Something is wrong !",Toast.LENGTH_LONG).show()
+            }
+        }
 }
