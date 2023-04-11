@@ -1,9 +1,9 @@
-package com.example.chitchat.ui.screens.signup
+package com.example.chitchat.ui.screens.signup.profile
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,24 +28,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.chitchat.R
+import com.example.chitchat.domain.Response
 import com.example.chitchat.model.CurrentUser
 import com.example.chitchat.model.ScreenType
-import com.example.chitchat.model.UiState
 import com.example.chitchat.ui.screens.ChatViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
+import com.example.chitchat.ui.screens.commons.ChatTopAppBar
+import com.example.chitchat.ui.screens.commons.ProgressBar
+import com.example.chitchat.ui.screens.signup.email.SignInButton
 
 
 @Composable
-fun SignScreen_2(
-    firebaseAuth: FirebaseAuth,
+fun SignScreen_Profile(
+    modifier: Modifier = Modifier,
     chatViewModel: ChatViewModel,
-    uiState: UiState,
+    profileViewModel: profileViewModel = hiltViewModel(),
 ) {
+    BackHandler {}
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
@@ -58,39 +59,39 @@ fun SignScreen_2(
         )
     }
 
-    val context = LocalContext.current
+    Column(modifier.fillMaxSize()) {
+        ChatTopAppBar(
+            topAppBarTitle = stringResource(id = R.string.signup_profile),
+            canGoBack = false,
+            onClickBack = {}
+        )
 
+        SingContents2(
+            firstNameValue = firstName,
+            firstNameValueChanged = { firstName = it },
+            lastNameValue = lastName,
+            lastNameValueChanged = { lastName = it },
+            description = description ?: "",
+            descriptionValueChanged = { description = it },
+            setPickedImage = { profileImage = it },
+            onClickSignIn = {
 
-    SingContents2(
-        firstNameValue = firstName,
-        firstNameValueChanged = { firstName = it },
-        lastNameValue = lastName,
-        lastNameValueChanged = { lastName = it },
-        description = description ?: "",
-        descriptionValueChanged = { description = it },
-        setPickedImage = { profileImage = it },
-        onClickSignIn = {
+                val currentUser = CurrentUser(
+                    name = "$firstName $lastName",
+                    description = description,
+                    image = profileImage.toString()
+                )
 
-            val currentUser = CurrentUser(
-                firstName = firstName,
-                lastName = lastName,
-                description = description,
-                image = profileImage.toString()
-            )
+                profileViewModel.addUserToDB(currentUser)
 
-            chatViewModel.setCurrentUser(currentUser)
+            }
+        )
 
-            Log.e("TAG", "currentUser = $currentUser")
+        AddDataToDBResponse(profileViewModel = profileViewModel, image = profileImage.toString())
 
-            updateUserProfile(
-                firebaseAuth = firebaseAuth,
-                currentUser = currentUser,
-                chatViewModel = chatViewModel,
-                context = context,
-            )
-        }
-    )
+        UploadImageToStorageResponse(profileViewModel = profileViewModel, chatViewModel = chatViewModel)
 
+    }
 }
 
 @Composable
@@ -274,60 +275,48 @@ fun DescriptionField(
     )
 }
 
-private fun updateUserProfile(
-    firebaseAuth: FirebaseAuth,
-    currentUser: CurrentUser,
-    chatViewModel: ChatViewModel,
-    context: Context,
-) {
-    val uid = firebaseAuth.currentUser?.uid
+@Composable
+private fun AddDataToDBResponse(
+    profileViewModel: profileViewModel,
+    image: String
+){
+    when(val addUserToDBResponse = profileViewModel.addUserToDBResponse){
+        is Response.Loading->{ProgressBar()}
 
-    val database = Firebase.database.reference
-
-    database.child("Users").child(uid!!).setValue(currentUser)
-        .addOnCompleteListener {
-            if (it.isSuccessful) {
-
-                uploadImage(firebaseAuth, Uri.parse(currentUser.image), chatViewModel, context)
-
-            } else {
-                Log.e("TAG", "UPDATE PROFILE : ${it.exception}")
-                Toast.makeText(context, "Something is wrong !", Toast.LENGTH_LONG).show()
-            }
+        is Response.Success ->{
+            LaunchedEffect(key1 = addUserToDBResponse, block = {
+                if(addUserToDBResponse.data!!){
+                    profileViewModel.uploadImageToStorage(image)
+                }
+            })
         }
 
-}
-
-private fun uploadImage(
-    firebaseAuth: FirebaseAuth,
-    imageUri: Uri,
-    chatViewModel: ChatViewModel,
-    context: Context,
-) {
-    val uid = firebaseAuth.currentUser!!.uid
-
-    val storageReference =
-        Firebase.storage.reference.child("images").child(uid)
-
-    storageReference.putFile(imageUri).addOnCompleteListener { task ->
-        if (task.isSuccessful) {
-
-            storageReference.downloadUrl.addOnCompleteListener {
-                if (it.isSuccessful) {
-                    // storing the new reference to the image in firebase storage:
-                    Firebase.database.reference.child("Users").child(uid).child("image")
-                        .setValue(it.result.toString())
-
-                } else {
-                    Log.e("TAG", "Failed to download image url")
-                }
-            }
-
-            chatViewModel.setScreenType(ScreenType.HomeList)
-        } else {
-            Log.e("TAG", "UPLOAD IMAGE failed : ${task.exception}")
-            Toast.makeText(context, "Something is wrong !", Toast.LENGTH_LONG).show()
+        is Response.Failure->{
+            Log.e("TAG","AddDataToDBResponse FAILED : ${addUserToDBResponse.e}")
         }
     }
+}
 
+@Composable
+private fun UploadImageToStorageResponse(
+    profileViewModel: profileViewModel,
+    chatViewModel: ChatViewModel
+){
+    val context = LocalContext.current
+    when(val uploadImageToStorageResponse = profileViewModel.uploadImageToStorageResponse){
+        is Response.Loading->{ ProgressBar()}
+
+        is Response.Success ->{
+            LaunchedEffect(key1 = uploadImageToStorageResponse, block = {
+                if(uploadImageToStorageResponse.data!!){
+                    chatViewModel.setScreenType(ScreenType.HomeList)
+                }
+            })
+        }
+
+        is Response.Failure->{
+            Log.e("TAG","AddDataToDBResponse FAILED : ${uploadImageToStorageResponse.e}")
+            Toast.makeText(context,"Something is wrong",Toast.LENGTH_LONG).show()
+        }
+    }
 }

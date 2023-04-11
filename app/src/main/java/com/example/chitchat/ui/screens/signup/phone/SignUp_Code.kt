@@ -1,17 +1,18 @@
-package com.example.chitchat.ui.screens.signup
+package com.example.chitchat.ui.screens.signup.phone
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -29,39 +30,55 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.chitchat.R
+import com.example.chitchat.domain.Response
 import com.example.chitchat.model.ScreenType
 import com.example.chitchat.ui.screens.ChatViewModel
-import com.google.firebase.FirebaseException
-import com.google.firebase.FirebaseTooManyRequestsException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthProvider
+import com.example.chitchat.ui.screens.commons.ChatTopAppBar
+import com.example.chitchat.ui.screens.commons.ProgressBar
+import com.example.chitchat.ui.screens.signup.email.SignInButton
 
-private var verificationID by mutableStateOf("")
 
 @Composable
 fun SignUpCode(
+    modifier: Modifier = Modifier,
     chatViewModel: ChatViewModel,
-    firebaseAuth: FirebaseAuth,
+    phoneAuthViewModel: PhoneAuthViewModel = hiltViewModel(),
 ) {
-    SignUpCodeContents(
-        chatViewModel = chatViewModel,
-        firebaseAuth = firebaseAuth
-    )
+    BackHandler {}
+
+    Column(modifier.fillMaxSize()) {
+        ChatTopAppBar(
+            topAppBarTitle = stringResource(id = R.string.signup_code),
+            canGoBack = false,
+            onClickBack = {}
+        )
+
+        SignUpCodeContents(
+            onClickSignIn = {
+                phoneAuthViewModel.signInWithPhoneCredential(it)
+            },
+            onClickResend = {
+                phoneAuthViewModel.resendVerificationCode()
+            }
+        )
+
+        SignInPHoneResponse(chatViewModel = chatViewModel, phoneAuthViewModel = phoneAuthViewModel)
+
+        ResendTokenResponse(phoneAuthViewModel = phoneAuthViewModel)
+    }
+
 }
 
 
 @Composable
 fun SignUpCodeContents(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel,
-    firebaseAuth: FirebaseAuth,
+    onClickSignIn: (String) -> Unit,
+    onClickResend: () -> Unit,
 ) {
-    val codeDigits = remember { MutableList(6) { mutableStateOf("") } }
-
-    val context = LocalContext.current
+    val codeDigits = rememberSaveable { MutableList(6) { mutableStateOf("") } }
 
     Column(
         modifier = modifier
@@ -76,24 +93,13 @@ fun SignUpCodeContents(
         OtpFields(codeDigits = codeDigits)
 
         SignInButton(
-            isEnabled = codeDigits.size == 6 ,
+            isEnabled = codeDigits.size == 6,
             onClickSignIn = {
-                Log.e("TAG", "CODE = ${codeDigits.joinToString(separator = ""){it.value}}")
-
-                val credential = PhoneAuthProvider.getCredential(
-                    verificationID,
-                    codeDigits.joinToString(separator = ""){it.value}
-                )
-
-                signInWithPhoneAuthCredential(
-                    phoneAuthCredential = credential,
-                    firebaseAuth = firebaseAuth,
-                    activity = context as Activity,
-                    context = context,
-                    chatViewModel = chatViewModel
-                )
+                Log.e("TAG", "CODE = ${codeDigits.joinToString(separator = "") { it.value }}")
+                onClickSignIn(codeDigits.joinToString(separator = "") { it.value })
             }
         )
+        ResendCode(onClickResend = { onClickResend() })
     }
 }
 
@@ -199,72 +205,61 @@ fun OtpChar(
     )
 }
 
-// on below line creating method to
-// sign in with phone credentials
-private fun signInWithPhoneAuthCredential(
-    phoneAuthCredential: PhoneAuthCredential,
-    firebaseAuth: FirebaseAuth,
-    activity: Activity,
-    context: Context,
-    chatViewModel: ChatViewModel,
+@Composable
+private fun ResendCode(modifier: Modifier = Modifier, onClickResend: () -> Unit) {
+    TextButton(onClick = { onClickResend() }) {
+        Text(text = "resend the code !")
+    }
+}
+
+@Composable
+private fun ResendTokenResponse(
+    phoneAuthViewModel: PhoneAuthViewModel,
 ) {
-    firebaseAuth.signInWithCredential(phoneAuthCredential)
-        .addOnCompleteListener(activity) {
-            if (it.isSuccessful) {
-                // Sign in success, update UI with the signed-in user's information
-                Log.e("TAG", "createUserWithEmail:success")
-                chatViewModel.setScreenType(ScreenType.SignProfile)
+    val context = LocalContext.current
 
-            } else {
-                // If sign in fails, display a message to the user.
-                Log.e("TAG", "createUserWithEmail:failure", it.exception)
+    when (val resendVerificationCodeResponse = phoneAuthViewModel.resendVerificationCodeResponse) {
+        is Response.Loading -> ProgressBar()
 
-                Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
-            }
-        }
-}
-
-
-val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-    override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-        // This callback will be invoked in two situations:
-        // 1 - Instant verification. In some cases the phone number can be instantly
-        //     verified without needing to send or enter a verification code.
-        // 2 - Auto-retrieval. On some devices Google Play services can automatically
-        //     detect the incoming verification SMS and perform verification without
-        //     user action.
-        Log.e("TAG", "onVerificationCompleted:$credential")
-    }
-
-    override fun onVerificationFailed(e: FirebaseException) {
-        // This callback is invoked in an invalid request for verification is made,
-        // for instance if the the phone number format is not valid.
-        Log.e("TAG", "onVerificationFailed", e)
-
-        if (e is FirebaseAuthInvalidCredentialsException) {
-            // Invalid request
-        } else if (e is FirebaseTooManyRequestsException) {
-            // The SMS quota for the project has been exceeded
+        is Response.Success -> {
+            LaunchedEffect(key1 = resendVerificationCodeResponse, block = {
+                if (resendVerificationCodeResponse.data!!) {
+                    Toast.makeText(context, "we have sent you the new code", Toast.LENGTH_LONG)
+                        .show()
+                }
+            })
         }
 
-        // Show a message and update the UI
-    }
-
-    override fun onCodeSent(
-        verificationId: String,
-        token: PhoneAuthProvider.ForceResendingToken,
-    ) {
-        // The SMS verification code has been sent to the provided phone number, we
-        // now need to ask the user to enter the code and then construct a credential
-        // by combining the code with a verification ID.
-        Log.e("TAG", "onCodeSent:$verificationId")
-
-        // Save verification ID and resending token so we can use them later
-
-        verificationID = verificationId
-
-        // storedToken = token
+        is Response.Failure -> {
+            Toast.makeText(context, "Something is wrong", Toast.LENGTH_LONG).show()
+        }
     }
 }
+
+@Composable
+private fun SignInPHoneResponse(
+    chatViewModel: ChatViewModel,
+    phoneAuthViewModel: PhoneAuthViewModel,
+) {
+    val context = LocalContext.current
+
+    when (val signInWithPhoneCredentialResponse =
+        phoneAuthViewModel.signInWithPhoneCredentialResponse) {
+        is Response.Loading -> ProgressBar()
+
+        is Response.Success -> {
+            LaunchedEffect(key1 = signInWithPhoneCredentialResponse, block = {
+                if (signInWithPhoneCredentialResponse.data!!) {
+                    chatViewModel.setScreenType(ScreenType.SignProfile)
+                }
+            })
+        }
+
+        is Response.Failure -> {
+            Toast.makeText(context, "Something is wrong", Toast.LENGTH_LONG).show()
+        }
+    }
+}
+
 
 

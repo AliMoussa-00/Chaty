@@ -1,5 +1,6 @@
 package com.example.chitchat.ui.screens.signup
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
@@ -14,33 +15,43 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.chitchat.model.ScreenType
 import com.example.chitchat.ui.screens.ChatViewModel
+import com.example.chitchat.ui.screens.commons.ChatTopAppBar
 
 @Composable
 fun ChooseSignUpMethode(
     modifier: Modifier = Modifier,
     chatViewModel: ChatViewModel,
 ) {
+    BackHandler {
+        chatViewModel.setScreenType(ScreenType.ChooseLogin)
+    }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-
-        Text(
-            text = "Please choose the methode you want to sign up with",
-            textAlign = TextAlign.Center
+    Column(Modifier.fillMaxSize()) {
+        ChatTopAppBar(
+            topAppBarTitle = "SignUp Method",
+            onClickBack = {chatViewModel.setScreenType(ScreenType.ChooseLogin)}
         )
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
 
-        ChoosePhone(onClickPhone = {
-            chatViewModel.setScreenType(ScreenType.SingPhone)
-        })
+            Text(
+                text = "Please choose the methode you want to sign up with",
+                textAlign = TextAlign.Center
+            )
 
-        ChooseEmailAndPass(onClickEmail = {
-            chatViewModel.setScreenType(ScreenType.SignEmail)
-        })
+            ChoosePhone(onClickPhone = {
+                chatViewModel.setScreenType(ScreenType.SingPhone)
+            })
+
+            ChooseEmailAndPass(onClickEmail = {
+                chatViewModel.setScreenType(ScreenType.SignEmail)
+            })
+        }
     }
 }
 

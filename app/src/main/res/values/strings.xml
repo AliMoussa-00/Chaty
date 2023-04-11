@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Chit Chat</string>
+    <string name="app_name">Chatty</string>
     <string name="forget_password">Forgot password?</string>
     <string name="login">Login</string>
     <string name="or">or continue with</string>
@@ -7,7 +7,7 @@
     <string name="user_name">Username</string>
     <string name="passeword">password</string>
     <string name="dont_have_account">You don\'t have an account ?</string>
-    <string name="signup">SIGN IN</string>
+    <string name="signup">SIGN UP</string>
     <string name="confirm_password">confirm password</string>
     <string name="email">Email</string>
     <string name="first_name">first name</string>
@@ -23,4 +23,11 @@
     <string name="show_pass">show password</string>
     <string name="hide_pass">hide password</string>
     <string name="weak_pass">password should be at least 6 characters</string>
+    <string name="signup_email">email</string>
+    <string name="signup_code">phone</string>
+    <string name="signup_profile" >profile</string>
+    <string name="signin_face">Sign in with Facebook</string>
+    <string name="signin_google">Sign in with Google</string>
+    <string name="signin_twitter">Sign in with Twitter</string>
+    <string name="signin_email">Continue with your account</string>
 </resources>

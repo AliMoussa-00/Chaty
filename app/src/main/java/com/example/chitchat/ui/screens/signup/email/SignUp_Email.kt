@@ -1,13 +1,9 @@
-package com.example.chitchat.ui.screens.signup
+package com.example.chitchat.ui.screens.signup.email
 
-import android.app.Activity
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -16,6 +12,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,49 +21,68 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.chitchat.R
+import com.example.chitchat.domain.Response
 import com.example.chitchat.model.ScreenType
 import com.example.chitchat.ui.screens.ChatViewModel
-import com.google.firebase.auth.FirebaseAuth
+import com.example.chitchat.ui.screens.commons.ChatTopAppBar
+import com.example.chitchat.ui.screens.commons.ProgressBar
 
 @Composable
-fun SignScreen_1(
-    firebaseAuth: FirebaseAuth,
-    chatViewModel: ChatViewModel
+fun SignUpEmail(
+    modifier: Modifier = Modifier,
+    chatViewModel: ChatViewModel,
+    emailPassAuthViewModel: EmailPassAuthViewModel = hiltViewModel(),
 ) {
+    BackHandler {
+        chatViewModel.setScreenType(ScreenType.SingChoose)
+    }
 
-    var email by remember { mutableStateOf("") }
+    var email by rememberSaveable {
+        mutableStateOf("")
+    }
 
-    var passwordValue by remember { mutableStateOf("") }
-    var passwordValueConfirm by remember { mutableStateOf("") }
+    var passwordValue by rememberSaveable {
+        mutableStateOf("")
+    }
+    var passwordValueConfirm by rememberSaveable {
+        mutableStateOf("")
+    }
 
-    val context = LocalContext.current
 
-    SingContents(
-        emailValue = email,
-        emailValueChanged = { email = it },
-        passWordValue = passwordValue,
-        passwordValueChanged = { passwordValue = it },
-        confirmPassWordValue = passwordValueConfirm,
-        confirmPasswordValueChanged = { passwordValueConfirm = it },
+    Column(modifier.fillMaxSize()) {
+        ChatTopAppBar(
+            topAppBarTitle = stringResource(id = R.string.signup_email),
+            onClickBack = {chatViewModel.setScreenType(ScreenType.SingChoose)}
+        )
 
-        onClickSignIn = {
-            createAccount(
-                firebaseAuth = firebaseAuth,
-                email = email,
-                password = passwordValue,
-                context = context,
-                chatViewModel = chatViewModel,
-                activity = context as Activity
-            )
-        }
-    )
+        SingContents(
+            chatViewModel = chatViewModel,
+            emailPassAuthViewModel = emailPassAuthViewModel,
+            emailValue = email,
+            emailValueChanged = { email = it },
+            passWordValue = passwordValue,
+            passwordValueChanged = { passwordValue = it },
+            confirmPassWordValue = passwordValueConfirm,
+            confirmPasswordValueChanged = { passwordValueConfirm = it },
+
+            onClickSignIn = {
+                emailPassAuthViewModel.signUpWithEmailAndPassword(
+                    email = email,
+                    password = passwordValue
+                )
+            }
+        )
+    }
 
 }
 
 @Composable
 fun SingContents(
     modifier: Modifier = Modifier,
+    chatViewModel: ChatViewModel,
+    emailPassAuthViewModel: EmailPassAuthViewModel,
     emailValue: String,
     emailValueChanged: (String) -> Unit,
     passWordValue: String,
@@ -75,6 +91,8 @@ fun SingContents(
     confirmPasswordValueChanged: (String) -> Unit,
     onClickSignIn: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -99,6 +117,24 @@ fun SingContents(
             onClickSignIn = { onClickSignIn() },
             isEnabled = passWordValue == confirmPassWordValue && passWordValue.length >= 6
         )
+
+        SignUpResponse(
+            emailPassAuthViewModel = emailPassAuthViewModel,
+            chatViewModel = chatViewModel,
+            sendEmailVerification = {
+                emailPassAuthViewModel.sendVerificationEmail()
+            },
+            showVerifyEmail = {
+                Toast.makeText(
+                    context,
+                    "Please check your emails for verification",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+
+        SendEmailVerification(emailPassAuthViewModel = emailPassAuthViewModel)
+
     }
 }
 
@@ -176,7 +212,7 @@ fun Password(
 }
 
 @Composable
-fun ConfirmPassword(
+private fun ConfirmPassword(
     modifier: Modifier = Modifier,
     confirmPassWordValue: String,
     confirmPasswordValueChanged: (String) -> Unit,
@@ -226,44 +262,43 @@ fun SignInButton(
     }
 }
 
-private fun createAccount(
-    firebaseAuth: FirebaseAuth,
-    email: String,
-    password: String,
-    context: Context,
+@Composable
+private fun SignUpResponse(
+    emailPassAuthViewModel: EmailPassAuthViewModel,
     chatViewModel: ChatViewModel,
-    activity: Activity
+    sendEmailVerification: () -> Unit,
+    showVerifyEmail: () -> Unit,
 ) {
+    when (val signUpEmailPassResponse = emailPassAuthViewModel.signUpResponse) {
+        is Response.Loading -> ProgressBar()
 
-    firebaseAuth
-        .createUserWithEmailAndPassword(email, password)
-        .addOnCompleteListener(activity) {
-            if (it.isSuccessful) {
-                // Sign in success, update UI with the signed-in user's information
-                Log.e("TAG", "createUserWithEmail:success")
-
-               sendEmailVerification(firebaseAuth, chatViewModel,context)
-
-            } else {
-                // If sign in fails, display a message to the user.
-                Log.e("TAG", "createUserWithEmail:failure", it.exception)
-
-                Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
-            }
+        is Response.Success -> {
+            val isUserSignedUp = signUpEmailPassResponse.data!!
+            LaunchedEffect(key1 = signUpEmailPassResponse, block = {
+                if (isUserSignedUp) {
+                    sendEmailVerification()
+                    showVerifyEmail()
+                    chatViewModel.setScreenType(ScreenType.SignProfile)
+                }
+            })
         }
+
+        is Response.Failure -> {
+            Log.e("TAG", "SIGN UP EMAIL Response Failed : ${signUpEmailPassResponse.e}")
+        }
+    }
 }
 
-private fun sendEmailVerification(firebaseAuth: FirebaseAuth,chatViewModel: ChatViewModel,context:Context){
-    val user = firebaseAuth.currentUser
+@Composable
+private fun SendEmailVerification(emailPassAuthViewModel: EmailPassAuthViewModel) {
 
-    user?.sendEmailVerification()?.addOnCompleteListener{
-        if(it.isSuccessful){
-            chatViewModel.setScreenType(ScreenType.SignProfile)
+    when (val sendEmailResponse = emailPassAuthViewModel.sendVerificationEmailResponse) {
+        is Response.Loading -> ProgressBar()
 
-            Toast.makeText(context, "please check your email box to verify your email", Toast.LENGTH_LONG).show()
-        }
-        else{
-            Log.e("TAG","SEND EMAIL failed: ${it.exception}")
+        is Response.Success -> Unit
+
+        is Response.Failure -> {
+            Log.e("TAG", "SEND VERIFICATION EMAIL Response Failed : ${sendEmailResponse.e}")
         }
     }
 }

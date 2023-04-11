@@ -11,8 +11,7 @@ data class User(
 )
 
 data class CurrentUser(
-    val firstName: String="",
-    val lastName: String="",
+    val name: String="",
     val description: String? = null,
     val image: String = "android.resource://com.example.chitchat/${R.drawable.baseline_account_circle_24}"
 )
