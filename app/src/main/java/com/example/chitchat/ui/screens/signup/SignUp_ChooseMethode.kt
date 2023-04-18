@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.example.chitchat.model.ScreenType
 import com.example.chitchat.ui.screens.ChatViewModel
 import com.example.chitchat.ui.screens.commons.ChatTopAppBar
+import com.example.chitchat.ui.screens.commons.ChattyLogo
 
 @Composable
 fun ChooseSignUpMethode(
@@ -38,6 +39,7 @@ fun ChooseSignUpMethode(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            ChattyLogo()
 
             Text(
                 text = "Please choose the methode you want to sign up with",

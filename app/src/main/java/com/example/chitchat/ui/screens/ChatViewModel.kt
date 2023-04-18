@@ -1,7 +1,6 @@
 package com.example.chitchat.ui.screens
 
 import androidx.lifecycle.ViewModel
-import com.example.chitchat.model.CurrentUser
 import com.example.chitchat.model.ScreenType
 import com.example.chitchat.model.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,14 +23,4 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    //----------------------------
-    //----- Setting Current User --
-    //----------------------------
-    fun setCurrentUser(currentUser: CurrentUser) {
-        _uiState.update {
-            it.copy(
-                currentUser = currentUser
-            )
-        }
-    }
 }

@@ -17,8 +17,7 @@ fun ChattyLogo(modifier: Modifier = Modifier){
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(40.dp)
-        ,
+            .padding(40.dp),
         contentAlignment = Alignment.Center
     ){
         Text(

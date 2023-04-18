@@ -31,33 +31,30 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.chitchat.R
+import com.example.chitchat.core.DEFAULT_USER_IMAGE
 import com.example.chitchat.domain.Response
-import com.example.chitchat.model.CurrentUser
 import com.example.chitchat.model.ScreenType
+import com.example.chitchat.model.User
 import com.example.chitchat.ui.screens.ChatViewModel
 import com.example.chitchat.ui.screens.commons.ChatTopAppBar
 import com.example.chitchat.ui.screens.commons.ProgressBar
 import com.example.chitchat.ui.screens.signup.email.SignInButton
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 
 @Composable
 fun SignScreen_Profile(
     modifier: Modifier = Modifier,
     chatViewModel: ChatViewModel,
-    profileViewModel: profileViewModel = hiltViewModel(),
+    FireStoreViewModel: FireStoreViewModel = hiltViewModel(),
 ) {
     BackHandler {}
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var description by remember { mutableStateOf<String?>(null) }
-    var profileImage by remember {
-        mutableStateOf<Uri>(
-            Uri.parse(
-                "android.resource://com.example.chitchat/${R.drawable.baseline_account_circle_24}"
-            )
-        )
-    }
+    var profileImage by remember { mutableStateOf<Uri?>(null) }
 
     Column(modifier.fillMaxSize()) {
         ChatTopAppBar(
@@ -76,20 +73,20 @@ fun SignScreen_Profile(
             setPickedImage = { profileImage = it },
             onClickSignIn = {
 
-                val currentUser = CurrentUser(
-                    name = "$firstName $lastName",
+                val user = User(
+                    id = Firebase.auth.currentUser?.uid!!,
+                    fullName = "$firstName $lastName",
+                    userImage = if(profileImage!=null)profileImage.toString() else null,
                     description = description,
-                    image = profileImage.toString()
                 )
 
-                profileViewModel.addUserToDB(currentUser)
-
+                FireStoreViewModel.addUserToDB(user)
             }
         )
 
-        AddDataToDBResponse(profileViewModel = profileViewModel, image = profileImage.toString())
+        AddDataToDBResponse(fireStoreViewModel = FireStoreViewModel,chatViewModel=chatViewModel, image = profileImage)
 
-        UploadImageToStorageResponse(profileViewModel = profileViewModel, chatViewModel = chatViewModel)
+        UploadImageToStorageResponse(fireStoreViewModel = FireStoreViewModel, chatViewModel = chatViewModel)
 
     }
 }
@@ -104,7 +101,7 @@ fun SingContents2(
     description: String,
     descriptionValueChanged: (String) -> Unit,
     onClickSignIn: () -> Unit,
-    setPickedImage: (Uri) -> Unit,
+    setPickedImage: (Uri?) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -147,18 +144,16 @@ fun SingContents2(
 @Composable
 fun PickUserImage(
     modifier: Modifier = Modifier,
-    setPickedImage: (Uri) -> Unit,
+    setPickedImage: (Uri?) -> Unit,
 ) {
 
-    val defaultImage =
-        "android.resource://com.example.chitchat/${R.drawable.baseline_account_circle_24}"
 
-    var selectedImage by remember { mutableStateOf<Uri>(Uri.parse(defaultImage)) }
+    var selectedImage by remember { mutableStateOf<Uri?>(null) }
 
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = {
-            selectedImage = it ?: Uri.parse(defaultImage)
+            selectedImage = it
 
             setPickedImage(selectedImage)
         }
@@ -171,7 +166,7 @@ fun PickUserImage(
             modifier = Modifier
                 .size(128.dp)
                 .clip(CircleShape),
-            model = selectedImage,
+            model = selectedImage ?: Uri.parse(DEFAULT_USER_IMAGE),
             contentDescription = null,
             contentScale = ContentScale.Crop
         )
@@ -277,16 +272,23 @@ fun DescriptionField(
 
 @Composable
 private fun AddDataToDBResponse(
-    profileViewModel: profileViewModel,
-    image: String
+    fireStoreViewModel: FireStoreViewModel,
+    chatViewModel: ChatViewModel,
+    image: Uri?
 ){
-    when(val addUserToDBResponse = profileViewModel.addUserToDBResponse){
+    when(val addUserToDBResponse = fireStoreViewModel.addUserToDBResponse){
         is Response.Loading->{ProgressBar()}
 
         is Response.Success ->{
             LaunchedEffect(key1 = addUserToDBResponse, block = {
                 if(addUserToDBResponse.data!!){
-                    profileViewModel.uploadImageToStorage(image)
+                    if(image != null){
+                        fireStoreViewModel.uploadImageToStorage(image.toString())
+                    }
+                    else{
+                        chatViewModel.setScreenType(ScreenType.HomeList)
+                    }
+                    fireStoreViewModel.resetAddUserToDBResponse()
                 }
             })
         }
@@ -299,17 +301,19 @@ private fun AddDataToDBResponse(
 
 @Composable
 private fun UploadImageToStorageResponse(
-    profileViewModel: profileViewModel,
+    fireStoreViewModel: FireStoreViewModel,
     chatViewModel: ChatViewModel
 ){
     val context = LocalContext.current
-    when(val uploadImageToStorageResponse = profileViewModel.uploadImageToStorageResponse){
+    when(val uploadImageToStorageResponse = fireStoreViewModel.uploadImageToStorageResponse){
         is Response.Loading->{ ProgressBar()}
 
         is Response.Success ->{
             LaunchedEffect(key1 = uploadImageToStorageResponse, block = {
                 if(uploadImageToStorageResponse.data!!){
                     chatViewModel.setScreenType(ScreenType.HomeList)
+                    fireStoreViewModel.resetUploadImageToStorageResponse()
+                    fireStoreViewModel.resetSetUserToDBResponse()
                 }
             })
         }

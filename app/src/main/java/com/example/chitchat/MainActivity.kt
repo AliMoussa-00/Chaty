@@ -1,6 +1,7 @@
 package com.example.chitchat
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +24,8 @@ import com.example.chitchat.ui.screens.signup.phone.SignUpCode
 import com.example.chitchat.ui.screens.signup.phone.SignUpPhone
 import com.example.chitchat.ui.screens.signup.profile.SignScreen_Profile
 import com.example.chitchat.ui.theme.ChitChatTheme
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -42,6 +45,10 @@ class MainActivity : ComponentActivity() {
 
                     val uiState by chatViewModel.uiState.collectAsState()
 
+                    if(Firebase.auth.currentUser != null && uiState.screenType == ScreenType.ChooseLogin){
+                        Log.e("AG","AUTH")
+                        chatViewModel.setScreenType(ScreenType.HomeList)
+                    }
 
                     SetScreen(
                         chatViewModel = chatViewModel,
@@ -81,7 +88,7 @@ class MainActivity : ComponentActivity() {
                 SignScreen_Profile(chatViewModel = chatViewModel)
             }
             ScreenType.HomeList -> {
-                ListUsersScreen()
+                ListUsersScreen(chatViewModel = chatViewModel)
             }
         }
     }

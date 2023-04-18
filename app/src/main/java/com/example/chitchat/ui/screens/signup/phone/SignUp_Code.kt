@@ -226,6 +226,8 @@ private fun ResendTokenResponse(
                 if (resendVerificationCodeResponse.data!!) {
                     Toast.makeText(context, "we have sent you the new code", Toast.LENGTH_LONG)
                         .show()
+
+                    phoneAuthViewModel.resetResendVerificationCodeResponse()
                 }
             })
         }
@@ -251,6 +253,7 @@ private fun SignInPHoneResponse(
             LaunchedEffect(key1 = signInWithPhoneCredentialResponse, block = {
                 if (signInWithPhoneCredentialResponse.data!!) {
                     chatViewModel.setScreenType(ScreenType.SignProfile)
+                    phoneAuthViewModel.resetSignInWithPhoneCredentialResponse()
                 }
             })
         }

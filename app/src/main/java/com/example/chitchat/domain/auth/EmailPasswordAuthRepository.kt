@@ -78,6 +78,6 @@ class EmailPasswordAuthRepositoryImpl @Inject constructor(
     }
 
     override fun isEmailVerified(): isEmailVerifiedResponse {
-        return auth.currentUser?.isEmailVerified!!
+        return auth.currentUser?.isEmailVerified ?: false
     }
 }

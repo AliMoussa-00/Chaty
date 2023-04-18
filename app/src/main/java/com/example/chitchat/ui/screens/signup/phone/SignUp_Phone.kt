@@ -103,6 +103,7 @@ private fun SendingCodeResponse(
           LaunchedEffect(key1 = sendVerificationCodeResponse, block = {
               if(sendVerificationCodeResponse.data!!){
                   chatViewModel.setScreenType(ScreenType.SignCode)
+                  phoneAuthViewModel.resetSendVerificationCodeResponse()
               }
           })
       }

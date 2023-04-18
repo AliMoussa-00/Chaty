@@ -1,5 +1,6 @@
 package com.example.chitchat.ui.screens.list_users
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,13 +20,40 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.chitchat.R
+import com.example.chitchat.core.DEFAULT_USER_IMAGE
+import com.example.chitchat.domain.Response
+import com.example.chitchat.model.ScreenType
 import com.example.chitchat.model.User
+import com.example.chitchat.ui.screens.ChatViewModel
+import com.example.chitchat.ui.screens.commons.ChatTopAppBar
+import com.example.chitchat.ui.screens.commons.ProgressBar
+import com.example.chitchat.ui.screens.profile.ProfileViewModel
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @Composable
-fun ListUsersScreen() {
-    ListUsersScreenContents(list = localList)
+fun ListUsersScreen(
+    chatViewModel: ChatViewModel,
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    listUsersViewModel: ListUsersViewModel = hiltViewModel(),
+) {
+    val usersList by listUsersViewModel.listUsers.collectAsState()
+
+    Column {
+        ChatTopAppBar(
+            topAppBarTitle = "Chatty",
+            canGoBack = false,
+            canSignOut = true,
+            onClickSignOut = {profileViewModel.signOut()}
+        )
+
+        ListUsersScreenContents(list = usersList.filter { it.id != Firebase.auth.currentUser?.uid!! })
+
+        SignOutResponse(profileViewModel = profileViewModel, chatViewModel = chatViewModel)
+
+    }
 }
 
 @Composable
@@ -60,14 +91,14 @@ fun ListItem(modifier: Modifier = Modifier, user: User) {
 @Composable
 fun ListItemImage(
     modifier: Modifier = Modifier,
-    userImage: String,
+    userImage: String?,
     userName: String,
     isConnected: Boolean,
 ) {
 
     Box(Modifier.size(48.dp)) {
         AsyncImage(
-            model = R.drawable.facebook,
+            model = userImage ?: DEFAULT_USER_IMAGE,
             contentDescription = userName,
             modifier = modifier
                 .size(48.dp)
@@ -105,107 +136,24 @@ fun ListItemContents(modifier: Modifier, user: User) {
     }
 }
 
+@Composable
+private fun SignOutResponse(profileViewModel: ProfileViewModel,chatViewModel: ChatViewModel){
+    when(val signOutResponse = profileViewModel.signOutResponse){
+        is Response.Loading ->{
+            ProgressBar()
+        }
 
+        is Response.Success->{
+            LaunchedEffect(key1 = signOutResponse, block = {
+                if(signOutResponse.data!!){
+                    profileViewModel.setSignOutResponseFalse()
+                    chatViewModel.setScreenType(ScreenType.ChooseLogin)
+                }
+            })
+        }
 
-val localList = listOf(
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = true,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = true,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-    User(
-        id = 0,
-        fullName = "Ali Moussa",
-        userImage = "https://picsum.photos/id/237/48",
-        isConnected = false,
-        lastConnected = 12123L
-    ),
-
-
-    )
+        is Response.Failure->{
+            Log.e("TAG","SignOutResponse FAILED : ${signOutResponse.e}")
+        }
+    }
+}

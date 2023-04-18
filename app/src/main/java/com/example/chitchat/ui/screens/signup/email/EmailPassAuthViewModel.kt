@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.chitchat.domain.*
+import com.example.chitchat.domain.Response
 import com.example.chitchat.domain.auth.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -60,6 +60,13 @@ class EmailPassAuthViewModel @Inject constructor(
 
     fun isEmailVerified(): isEmailVerifiedResponse {
         return repo.isEmailVerified()
+    }
+
+    fun resetSignUpResponse(){
+        signUpResponse = Response.Success(false)
+    }
+    fun resetSendVerificationEmailResponse(){
+        sendVerificationEmailResponse = Response.Success(false)
     }
 
 }

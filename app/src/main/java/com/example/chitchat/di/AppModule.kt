@@ -6,13 +6,17 @@ import com.example.chitchat.R
 import com.example.chitchat.core.SIGN_IN_REQUEST
 import com.example.chitchat.core.SIGN_UP_REQUEST
 import com.example.chitchat.domain.auth.*
+import com.example.chitchat.domain.firestore.FireStoreRepository
+import com.example.chitchat.domain.firestore.FireStoreRepositoryImpl
+import com.example.chitchat.domain.profile_repo.ProfileRepository
+import com.example.chitchat.domain.profile_repo.ProfileRepositoryImpl
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ktx.database
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
@@ -32,7 +36,7 @@ object AppModule {
     fun provideFirebaseAuth() = Firebase.auth
 
     @Provides
-    fun provideRealTimeDB() = Firebase.database
+    fun provideFireStore() = Firebase.firestore
 
     @Provides
     fun provideStorageReference() = Firebase.storage
@@ -46,7 +50,7 @@ object AppModule {
         signInRequest: BeginSignInRequest,
         @Named(SIGN_UP_REQUEST)
         signUpRequest: BeginSignInRequest,
-        db: FirebaseDatabase,
+        db: FirebaseFirestore,
     ): GoogleAuthRepository = GoogleAuthRepositoryImpl(
         auth = auth,
         oneTapClient = oneTapClient,
@@ -128,14 +132,22 @@ object AppModule {
     }
 
     //---------------------------------
-    // profile: RealTileDB & Storage
+    //RealTileDB & Storage
     //---------------------------------
     @Provides
     @Singleton
-    fun provideProfileRepository(
+    fun provideFireStoreRepository(
         auth: FirebaseAuth,
-        db: FirebaseDatabase,
+        db: FirebaseFirestore,
         storage: FirebaseStorage,
-    ): RealTimeDBRepository =
-        RealTimeDBRepositoryImpl(auth, db, storage)
+    ): FireStoreRepository =
+        FireStoreRepositoryImpl(auth, db, storage)
+
+    @Provides
+    @Singleton
+    fun provideProfileRepo(
+        auth: FirebaseAuth
+    ): ProfileRepository= ProfileRepositoryImpl(auth)
+
+
 }

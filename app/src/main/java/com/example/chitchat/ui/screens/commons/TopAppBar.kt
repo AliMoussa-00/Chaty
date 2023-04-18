@@ -2,6 +2,7 @@ package com.example.chitchat.ui.screens.commons
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 
@@ -10,7 +11,9 @@ import androidx.compose.runtime.Composable
 fun ChatTopAppBar(
     topAppBarTitle: String,
     canGoBack: Boolean = true,
-    onClickBack: ()->Unit
+    onClickBack: ()->Unit={},
+    canSignOut:Boolean = false,
+    onClickSignOut:()->Unit={}
 ){
     TopAppBar(
         title = { Text(text = topAppBarTitle)},
@@ -20,6 +23,14 @@ fun ChatTopAppBar(
                     Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null)
                 }
             }
+        },
+        actions = {
+            if(canSignOut){
+                IconButton(onClick = onClickSignOut) {
+                    Icon(imageVector = Icons.Default.Logout, contentDescription = null)
+                }
+            }
         }
+
     )
 }

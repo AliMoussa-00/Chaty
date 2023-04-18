@@ -279,6 +279,7 @@ private fun SignUpResponse(
                     sendEmailVerification()
                     showVerifyEmail()
                     chatViewModel.setScreenType(ScreenType.SignProfile)
+                    emailPassAuthViewModel.resetSignUpResponse()
                 }
             })
         }
@@ -295,7 +296,7 @@ private fun SendEmailVerification(emailPassAuthViewModel: EmailPassAuthViewModel
     when (val sendEmailResponse = emailPassAuthViewModel.sendVerificationEmailResponse) {
         is Response.Loading -> ProgressBar()
 
-        is Response.Success -> Unit
+        is Response.Success -> {emailPassAuthViewModel.resetSendVerificationEmailResponse()}
 
         is Response.Failure -> {
             Log.e("TAG", "SEND VERIFICATION EMAIL Response Failed : ${sendEmailResponse.e}")

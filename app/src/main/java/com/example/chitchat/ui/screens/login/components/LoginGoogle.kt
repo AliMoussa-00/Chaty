@@ -65,7 +65,8 @@ fun LoginGoogleBtn(
 ) {
     LoginCard(
         image = R.drawable.google,
-        text = R.string.signin_google) {
+        text = R.string.signin_google
+    ) {
         continueGoogle()
     }
 }
@@ -106,11 +107,12 @@ fun SignInWithGoogleResponse(
         }
 
         is Response.Success -> {
-            signInWithGoogleResponse.data?.let {
-                LaunchedEffect(key1 = it, block = {
+            LaunchedEffect(key1 = signInWithGoogleResponse, block = {
+                if (signInWithGoogleResponse.data != null){
                     chatViewModel.setScreenType(ScreenType.HomeList)
-                })
-            }
+                    googleAuthViewModel.resetSignInGoogleResponse()
+                }
+            })
         }
 
         is Response.Failure -> {

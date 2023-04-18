@@ -55,5 +55,17 @@ class PhoneAuthViewModel @Inject constructor(private val repo: PhoneAuthReposito
         }
     }
 
+    fun resetSendVerificationCodeResponse(){
+        sendVerificationCodeResponse = Response.Success(false)
+    }
+
+    fun resetResendVerificationCodeResponse(){
+        resendVerificationCodeResponse = Response.Success(false)
+    }
+
+    fun resetSignInWithPhoneCredentialResponse(){
+        signInWithPhoneCredentialResponse = Response.Success(false)
+    }
+
 
 }
