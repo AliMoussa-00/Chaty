@@ -1,4 +1,4 @@
-package com.example.chitchat.model
+package com.example.chitchat.models
 
 
 data class User(

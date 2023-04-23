@@ -5,7 +5,7 @@ import com.example.chitchat.core.COLLECTION_USERS
 import com.example.chitchat.core.SIGN_IN_REQUEST
 import com.example.chitchat.core.SIGN_UP_REQUEST
 import com.example.chitchat.domain.Response
-import com.example.chitchat.model.User
+import com.example.chitchat.models.User
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInResult
 import com.google.android.gms.auth.api.identity.SignInClient

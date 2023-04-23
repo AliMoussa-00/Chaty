@@ -4,7 +4,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.chitchat.core.COLLECTION_USERS
 import com.example.chitchat.domain.Response
-import com.example.chitchat.model.User
+import com.example.chitchat.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore

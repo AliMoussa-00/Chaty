@@ -12,9 +12,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.chitchat.model.ScreenType
-import com.example.chitchat.model.UiState
+import com.example.chitchat.models.ScreenType
+import com.example.chitchat.models.UiState
 import com.example.chitchat.ui.screens.ChatViewModel
+import com.example.chitchat.ui.screens.chatscreens.OneToOneChatScreen
 import com.example.chitchat.ui.screens.list_users.ListUsersScreen
 import com.example.chitchat.ui.screens.login.components.LoginEmailScreen
 import com.example.chitchat.ui.screens.login.components.LoginScreen
@@ -84,12 +85,16 @@ class MainActivity : ComponentActivity() {
             ScreenType.SignCode -> {
                 SignUpCode(chatViewModel = chatViewModel)
             }
-            ScreenType.SignProfile -> {
-                SignScreen_Profile(chatViewModel = chatViewModel)
-            }
             ScreenType.HomeList -> {
                 ListUsersScreen(chatViewModel = chatViewModel)
             }
+            ScreenType.SignProfile -> {
+                SignScreen_Profile(chatViewModel = chatViewModel)
+            }
+            ScreenType.OneToOneChat -> {
+                OneToOneChatScreen(chatViewModel = chatViewModel)
+            }
+            
         }
     }
 }

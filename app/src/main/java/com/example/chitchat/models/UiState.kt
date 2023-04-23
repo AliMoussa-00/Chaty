@@ -1,4 +1,4 @@
-package com.example.chitchat.model
+package com.example.chitchat.models
 
 data class UiState(
     val screenType: ScreenType = ScreenType.ChooseLogin
@@ -12,5 +12,6 @@ enum class ScreenType{
     SingPhone,
     SignCode,
     SignProfile,
-    HomeList
+    HomeList,
+    OneToOneChat,
 }

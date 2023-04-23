@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.chitchat.model.ScreenType
+import com.example.chitchat.models.ScreenType
 import com.example.chitchat.ui.screens.ChatViewModel
 import com.example.chitchat.ui.screens.commons.ChatTopAppBar
 import com.example.chitchat.ui.screens.commons.ChattyLogo

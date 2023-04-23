@@ -1,5 +1,6 @@
 package com.example.chitchat.ui.screens.chatscreens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -12,34 +13,67 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.chitchat.R
-import com.example.chitchat.ui.theme.ChitChatTheme
+import com.example.chitchat.models.Message
+import com.example.chitchat.models.ScreenType
+import com.example.chitchat.ui.screens.ChatViewModel
+import com.example.chitchat.ui.screens.chatscreens.commons.ChatMessages
+import com.example.chitchat.ui.screens.commons.OneToOneChatTopAppBar
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @Composable
-fun OneToOneChatScreen() {
+fun OneToOneChatScreen(
+    modifier: Modifier = Modifier,
+    chatViewModel: ChatViewModel,
+    currentUserId: String = "",
+    friendId: String = "",
+) {
+
+    BackHandler {
+        chatViewModel.setScreenType(ScreenType.HomeList)
+    }
+
+    val friendData = chatViewModel.friendUser
+
+
+    Column(modifier.fillMaxSize().imePadding()) {
+
+        OneToOneChatTopAppBar(
+            friendData = friendData,
+            onClickBack = { chatViewModel.setScreenType(ScreenType.HomeList) }
+        )
+
+        OneToOneChatScreenContents(modifier=Modifier.weight(1f))
+
+    }
+
 }
 
 @Composable
-fun ChatOneScreenContents(
-    modifier: Modifier = Modifier,
+private fun OneToOneChatScreenContents(
+    modifier: Modifier,
+    onMessageDeleted: () -> Unit = {},
 ) {
 
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
     ) {
 
-        Spacer(modifier = Modifier.weight(1f))
-        ChatBottom()
+        ChatMessages(modifier = modifier, messages = messages)
+        ChatBottom(
+            onMessageSent = {
+                messages.add(Message(senderId = Firebase.auth.currentUser?.uid!!, text = it))
+            }
+        )
     }
 }
 
+
 @Composable
-fun ChatBottom(
+private fun ChatBottom(
     modifier: Modifier = Modifier,
+    onMessageSent: (String) -> Unit = {},
 ) {
     Row(
         modifier.fillMaxWidth(),
@@ -51,7 +85,10 @@ fun ChatBottom(
             modifier = Modifier.weight(1f),
             value = value,
             onValueChanged = { value = it },
-            onClickSend = {}
+            onClickSend = {
+                onMessageSent(value)
+                value = ""
+            }
         )
 
         AddOptionsButtons(
@@ -61,7 +98,7 @@ fun ChatBottom(
 }
 
 @Composable
-fun MessageField(
+private fun MessageField(
     modifier: Modifier = Modifier,
     value: String,
     onValueChanged: (String) -> Unit,
@@ -75,11 +112,11 @@ fun MessageField(
             value = value,
             onValueChange = { onValueChanged(it) },
             placeholder = { Text(text = stringResource(id = R.string.message)) },
-            trailingIcon ={
+            trailingIcon = {
                 Row(
-                    modifier = Modifier.background(color=Color.Red)
+                    modifier = Modifier.background(color = Color.Red)
 
-                ){
+                ) {
                     IconButton(
                         modifier = Modifier.background(color = Color.Red),
                         onClick = {
@@ -100,7 +137,7 @@ fun MessageField(
 }
 
 @Composable
-fun AddOptionsButtons(
+private fun AddOptionsButtons(
     modifier: Modifier = Modifier,
 ) {
     IconButton(
@@ -115,11 +152,34 @@ fun AddOptionsButtons(
     }
 }
 
-
-@Preview(showSystemUi = true, showBackground = true)
-@Composable
-fun PreviewChatOnToOne() {
-    ChitChatTheme {
-        ChatOneScreenContents()
-    }
-}
+var messages = mutableStateListOf(
+    Message(senderId = "ze", text = "hello Ali"),
+    Message(senderId = "ze", text = "how are you doing ?"),
+    Message(senderId = "ze", text = "is everything fine?"),
+    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "hello john"),
+    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "i am fine thanks"),
+    Message(senderId = "ze", text = "that is good news"),
+    Message(senderId = "ze", text = "hello Ali"),
+    Message(senderId = "ze", text = "how are you doing ?"),
+    Message(senderId = "ze", text = "is everything fine?"),
+    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "hello john"),
+    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "i am fine thanks"),
+    Message(senderId = "ze", text = "that is good news"),
+    Message(senderId = "ze", text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"),
+    Message(
+        senderId = Firebase.auth.currentUser?.uid!!,
+        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+    ),
+    Message(
+        senderId = Firebase.auth.currentUser?.uid!!,
+        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+    ),
+    Message(
+        senderId = "ze",
+        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+    ),
+    Message(
+        senderId = Firebase.auth.currentUser?.uid!!,
+        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+    ),
+)

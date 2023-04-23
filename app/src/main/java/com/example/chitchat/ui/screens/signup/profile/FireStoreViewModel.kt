@@ -10,7 +10,7 @@ import com.example.chitchat.domain.firestore.AddUserToDBResponse
 import com.example.chitchat.domain.firestore.FireStoreRepository
 import com.example.chitchat.domain.firestore.SetUserToDBResponse
 import com.example.chitchat.domain.firestore.UploadImageToStorageResponse
-import com.example.chitchat.model.User
+import com.example.chitchat.models.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

@@ -33,8 +33,8 @@ import coil.compose.AsyncImage
 import com.example.chitchat.R
 import com.example.chitchat.core.DEFAULT_USER_IMAGE
 import com.example.chitchat.domain.Response
-import com.example.chitchat.model.ScreenType
-import com.example.chitchat.model.User
+import com.example.chitchat.models.ScreenType
+import com.example.chitchat.models.User
 import com.example.chitchat.ui.screens.ChatViewModel
 import com.example.chitchat.ui.screens.commons.ChatTopAppBar
 import com.example.chitchat.ui.screens.commons.ProgressBar

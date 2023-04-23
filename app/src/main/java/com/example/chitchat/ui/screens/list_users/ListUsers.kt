@@ -3,6 +3,7 @@ package com.example.chitchat.ui.screens.list_users
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,8 +25,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.chitchat.core.DEFAULT_USER_IMAGE
 import com.example.chitchat.domain.Response
-import com.example.chitchat.model.ScreenType
-import com.example.chitchat.model.User
+import com.example.chitchat.models.ScreenType
+import com.example.chitchat.models.User
 import com.example.chitchat.ui.screens.ChatViewModel
 import com.example.chitchat.ui.screens.commons.ChatTopAppBar
 import com.example.chitchat.ui.screens.commons.ProgressBar
@@ -49,7 +50,13 @@ fun ListUsersScreen(
             onClickSignOut = {profileViewModel.signOut()}
         )
 
-        ListUsersScreenContents(list = usersList.filter { it.id != Firebase.auth.currentUser?.uid!! })
+        ListUsersScreenContents(
+            list = usersList.filter { it.id != Firebase.auth.currentUser?.uid!! },
+            onClickUser = {
+                chatViewModel.settingFriendUserData(it)
+                chatViewModel.setScreenType(ScreenType.OneToOneChat)
+            }
+        )
 
         SignOutResponse(profileViewModel = profileViewModel, chatViewModel = chatViewModel)
 
@@ -59,18 +66,19 @@ fun ListUsersScreen(
 @Composable
 fun ListUsersScreenContents(
     list: List<User>,
+    onClickUser: (User) -> Unit
 ) {
     Column(Modifier.padding(8.dp)) {
         LazyColumn {
             items(list) {
-                ListItem(user = it)
+                ListItem(user = it, onClickUser = { onClickUser(it) })
             }
         }
     }
 }
 
 @Composable
-fun ListItem(modifier: Modifier = Modifier, user: User) {
+fun ListItem(modifier: Modifier = Modifier, user: User,onClickUser: () -> Unit) {
 
     Row(
         modifier
@@ -84,7 +92,7 @@ fun ListItem(modifier: Modifier = Modifier, user: User) {
             userName = user.fullName,
             isConnected = user.isConnected
         )
-        ListItemContents(modifier = Modifier.weight(1f), user = user)
+        ListItemContents(modifier = Modifier.weight(1f), user = user, onClickUser = onClickUser)
     }
 }
 
@@ -118,10 +126,12 @@ fun ListItemImage(
 }
 
 @Composable
-fun ListItemContents(modifier: Modifier, user: User) {
+fun ListItemContents(modifier: Modifier, user: User,onClickUser:()->Unit) {
 
     Column(
-        modifier =  modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClickUser() },
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
