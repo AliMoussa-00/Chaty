@@ -2,13 +2,29 @@ package com.example.chitchat.ui.screens.chatscreens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Send
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.chitchat.R
 import com.example.chitchat.models.Message
+import com.example.chitchat.models.Room
 import com.example.chitchat.models.ScreenType
 import com.example.chitchat.ui.screens.ChatViewModel
 import com.example.chitchat.ui.screens.chatscreens.commons.ChatMessages
@@ -25,20 +42,38 @@ import com.example.chitchat.ui.theme.ChitChatTheme
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun PreviewChat(){
+fun PreviewChat() {
     ChitChatTheme {
-        OneToOneChatScreen()
+
+        Column(Modifier.fillMaxSize()) {
+            TopAppBar(
+                title = { Text(text = "Title") },
+                modifier = Modifier
+                    .fillMaxWidth(),
+            )
+
+            Column(Modifier.weight(1f)) {
+                LazyColumn(modifier = Modifier.weight(1f), content = {
+                    items(40) {
+                        Text(text = "Text : $it", modifier = Modifier.fillMaxWidth())
+                    }
+                })
+
+                TextField(value = "", onValueChange = {})
+            }
+        }
     }
+
 }
 
 @Composable
 fun OneToOneChatScreen(
     modifier: Modifier = Modifier,
-    chatViewModel: ChatViewModel = hiltViewModel(),
-    currentUserId: String = "",
-    friendId: String = "",
+    chatViewModel: ChatViewModel,
+    chattingViewModel: ChattingViewModel = hiltViewModel(),
 ) {
 
     BackHandler {
@@ -46,7 +81,7 @@ fun OneToOneChatScreen(
     }
 
     val friendData = chatViewModel.friendUser
-
+    val userId = Firebase.auth.currentUser?.uid!!
 
     Column(modifier.fillMaxSize()) {
 
@@ -55,8 +90,20 @@ fun OneToOneChatScreen(
             onClickBack = { chatViewModel.setScreenType(ScreenType.HomeList) }
         )
 
-        OneToOneChatScreenContents(modifier=Modifier.weight(1f))
-
+        OneToOneChatScreenContents(
+            modifier = Modifier.weight(1f),
+            chattingViewModel = chattingViewModel,
+            friendId = friendData.id,
+            onMessageSent = {
+                chattingViewModel.sendMessage(
+                    Room(
+                        userId = userId,
+                        friendId = friendData.id,
+                        message = Message(userId, text = it)
+                    )
+                )
+            }
+        )
     }
 
 }
@@ -64,18 +111,22 @@ fun OneToOneChatScreen(
 @Composable
 private fun OneToOneChatScreenContents(
     modifier: Modifier,
+    chattingViewModel: ChattingViewModel,
+    friendId: String,
+    onMessageSent: (String) -> Unit,
     onMessageDeleted: () -> Unit = {},
 ) {
 
     Column(
         modifier = modifier
     ) {
-
-        ChatMessages(modifier = Modifier.weight(1f), messages = messages)
+        ChatMessages(
+            modifier = Modifier.weight(1f),
+            friendId = friendId,
+            chattingViewModel = chattingViewModel
+        )
         ChatBottom(
-            onMessageSent = {
-                messages.add(Message(senderId = Firebase.auth.currentUser?.uid!!, text = it))
-            }
+            onMessageSent = { onMessageSent(it) }
         )
     }
 }
@@ -163,34 +214,3 @@ private fun AddOptionsButtons(
     }
 }
 
-var messages = mutableStateListOf(
-    Message(senderId = "ze", text = "hello Ali"),
-    Message(senderId = "ze", text = "how are you doing ?"),
-    Message(senderId = "ze", text = "is everything fine?"),
-    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "hello john"),
-    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "i am fine thanks"),
-    Message(senderId = "ze", text = "that is good news"),
-    Message(senderId = "ze", text = "hello Ali"),
-    Message(senderId = "ze", text = "how are you doing ?"),
-    Message(senderId = "ze", text = "is everything fine?"),
-    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "hello john"),
-    Message(senderId = Firebase.auth.currentUser?.uid!!, text = "i am fine thanks"),
-    Message(senderId = "ze", text = "that is good news"),
-    Message(senderId = "ze", text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"),
-    Message(
-        senderId = Firebase.auth.currentUser?.uid!!,
-        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-    ),
-    Message(
-        senderId = Firebase.auth.currentUser?.uid!!,
-        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-    ),
-    Message(
-        senderId = "ze",
-        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-    ),
-    Message(
-        senderId = Firebase.auth.currentUser?.uid!!,
-        text = "that is good newsnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
-    ),
-)

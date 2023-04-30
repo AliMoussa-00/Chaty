@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     val uiState by chatViewModel.uiState.collectAsState()
 
                     if(Firebase.auth.currentUser != null && uiState.screenType == ScreenType.ChooseLogin){
-                        Log.e("AG","AUTH")
+                        Log.e("AG","AUTH = ${Firebase.auth.currentUser!!.uid}")
                         chatViewModel.setScreenType(ScreenType.HomeList)
                     }
 

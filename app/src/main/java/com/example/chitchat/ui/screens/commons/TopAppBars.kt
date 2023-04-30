@@ -58,6 +58,7 @@ fun OneToOneChatTopAppBar(
     onClickBack: () -> Unit = {},
 ) {
     TopAppBar(
+        modifier= modifier.padding(8.dp),
         title = {
             Text(
                 text = friendData.fullName,
@@ -75,16 +76,17 @@ fun OneToOneChatTopAppBar(
             }
         },
         actions = {
-            IconButton(modifier = Modifier.padding(8.dp), onClick = { onClickFriendImage() }) {
+            IconButton(onClick = { onClickFriendImage() }) {
 
-                Box(modifier = Modifier.size(38.dp)) {
+                Box(modifier = Modifier
+                    .padding(4.dp)) {
                     AsyncImage(
                         model = friendData.userImage ?: DEFAULT_USER_IMAGE,
                         contentDescription = null,
-                        modifier = modifier
-                            .size(38.dp)
+                        modifier = Modifier
+                            .size(56.dp)
                             .clip(CircleShape),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.FillBounds
                     )
                     if (friendData.isConnected) {
                         Spacer(
@@ -92,7 +94,7 @@ fun OneToOneChatTopAppBar(
                                 .align(Alignment.TopEnd)
                                 .background(color = Color.Green, shape = CircleShape)
                                 .border(width = 1.dp, color = Color.White, shape = CircleShape)
-                                .size(12.dp)
+                                .size(10.dp)
                         )
                     }
                 }

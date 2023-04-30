@@ -4,7 +4,14 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.chitchat.core.DEFAULT_USER_IMAGE
 import com.example.chitchat.domain.Response
@@ -40,7 +48,7 @@ fun ListUsersScreen(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     listUsersViewModel: ListUsersViewModel = hiltViewModel(),
 ) {
-    val usersList by listUsersViewModel.listUsers.collectAsState()
+    val usersList by listUsersViewModel.listUsers.collectAsStateWithLifecycle()
 
     Column {
         ChatTopAppBar(
@@ -104,14 +112,14 @@ fun ListItemImage(
     isConnected: Boolean,
 ) {
 
-    Box(Modifier.size(48.dp)) {
+    Box(Modifier.padding(4.dp)) {
         AsyncImage(
             model = userImage ?: DEFAULT_USER_IMAGE,
             contentDescription = userName,
             modifier = modifier
                 .size(48.dp)
                 .clip(CircleShape),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.FillBounds
         )
         if (isConnected) {
             Spacer(

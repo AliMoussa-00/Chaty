@@ -40,7 +40,7 @@ class PhoneAuthRepositoryImpl @Inject constructor (
         activity = myactivity
         phoneNum = phone
         return try{
-            val options = activity?.let {
+            val options = activity.let {
                 PhoneAuthOptions.newBuilder(auth)
                     .setPhoneNumber(phone)
                     .setTimeout(10L,TimeUnit.SECONDS)
@@ -64,7 +64,7 @@ class PhoneAuthRepositoryImpl @Inject constructor (
 
     override suspend fun resendCode(): ResendVerificationCodeResponse {
         return try{
-            val options = activity?.let {
+            val options = activity.let {
                 PhoneAuthOptions.newBuilder(auth)
                     .setPhoneNumber(phoneNum)
                     .setTimeout(10L,TimeUnit.SECONDS)
